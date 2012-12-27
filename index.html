@@ -1,0 +1,144 @@
+<head>
+<meta charset="UTF-8">
+</head>
+
+<style>
+body {
+    margin: 20px;
+}
+p {
+    margin: 5px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid #000;
+}
+dt{
+    margin-top: 5px;
+    width: 100px;
+    float: left;
+    text-align: right;
+}
+dd{
+    margin: 5px 0 5px 100px;
+}
+input {
+    font-size: 100%;
+    padding: 5px;
+}
+#message {
+    width: 400px;
+}
+  img,canvas,video {
+				width:500px;
+				height:500px;
+				background-color:black;
+			}
+			button {
+				border:1px solid #eeeeee;
+				width:100px;
+				height:30px;
+				color:white;
+			}
+			#capture {
+				background-color:#008800;
+			}
+			#stop {
+				background-color:#880000;
+			}
+
+</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.0b1.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+jQuery(function(){
+  var socket = io.connect('http://localhost');
+ 
+  // サーバからメッセージ受信
+  socket.on('send user', function (msg) {
+      jQuery('#chat').prepend('<p>'+msg+'</p>');
+  });
+  jQuery('input[type=submit]').click(function(){
+      var name = jQuery('#name').val();
+      var message = jQuery('#message').val();
+ 
+      // サーバへメッセージ送信
+      socket.emit('server send', name+'：'+message);
+  });
+});
+</script>
+
+<script>
+		var video = document.querySelector('video');
+		var canvas = document.querySelector('canvas');
+		var ctx = canvas.getContext('2d');
+		var localMediaStream = null;
+
+		//カメラ使えるかチェック
+		var hasGetUserMedia = function() {
+			return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
+				navigator.mozGetUserMedia || navigator.msGetUserMedia);
+		}
+		//エラー
+		var onFailSoHard = function(e) {
+			console.log('エラー!', e);
+		};
+
+		//カメラ画像キャプチャ
+		var snapshot = function() {
+			if (localMediaStream) {
+				ctx.drawImage(video, 0, 0);
+				document.querySelector('img').src = canvas.toDataURL('image/webp');
+			}
+		}
+
+		if (hasGetUserMedia()) {
+			console.log("カメラ OK");
+		} else {
+			alert("未対応ブラウザです。");
+		}
+
+
+		window.URL = window.URL || window.webkitURL;
+		navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+								  navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+		navigator.getUserMedia({video: true}, function(stream) {
+		  video.src = window.URL.createObjectURL(stream);
+		  localMediaStream = stream;
+		}, onFailSoHard);
+
+		//ボタンイベント
+		$("#capture").click(function() {
+			snapshot();
+		});
+		$("#stop").click(function() {
+			localMediaStream.stop();
+		});
+		$("video").click(function() {
+			snapshot();
+		});
+
+	</script>
+
+<body>
+
+<video autoplay width="640" height="480"></video>
+		<img src="" width="640" height="480" >
+		<canvas style="display:none;" width="640" height="480"></canvas>
+		<div id="wrapper"> 
+			<button id="capture">capture</button>
+			<button id="stop">stop</button>
+		</div>
+
+<div>
+  <dl>
+    <dt>名前：</dt><dd><input type="text" id="name"></dd>
+    <dt>メッセージ：</dt><dd><input type="text" id="message" size="140" /></dd>
+    <dd><input type="submit" value="送信" /></dd>
+  </dl>
+  <hr />
+  <div id="chat"></div>
+</div>
+
+
+</body>
